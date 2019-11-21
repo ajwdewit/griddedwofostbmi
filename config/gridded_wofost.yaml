@@ -1,0 +1,23 @@
+GriddedWOFOSTBMI:
+  version: 0.1
+maps:
+  AEZ_map:
+    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\moselle_AEZ.tif
+    relevant_aez: [38, 47, 51, 55, 61]
+  crop_rotation_map:
+    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\crop_rotation_types.tif
+    relevant_crop_rotations: [1, 2, 3]
+  rooting_depth:
+    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\rooting_depth.tif
+crop_parameters: D:\NoBackup\moselle_griddedWOFOST\crop_parameters
+weather_variables:
+  location: D:\NoBackup\moselle\inmaps\moselle_era5-2000_2018.nc
+  variables:
+    TMAX: TMAX
+    TMIN: TMIN
+    TEMP: TEMP
+    RAIN: P
+    ET0: PET
+    ES0: PET
+    E0: PET
+    IRRAD: IRRAD
