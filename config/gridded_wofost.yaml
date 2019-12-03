@@ -1,17 +1,23 @@
 GriddedWOFOSTBMI:
   version: 0.1
 maps:
+  metadata:
+    nrows: 314
+    ncols: 292
   AEZ_map:
-    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\moselle_AEZ.tif
-    relevant_aez: [38, 47, 51, 55, 61]
+    location: C:/data/NoBackup/moselle_griddedWOFOST/staticmaps/moselle_AEZ.tif
+    relevant_AEZ: [38, 47, 51, 55, 61]
   crop_rotation_map:
-    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\crop_rotation_types.tif
+    location: C:/data/NoBackup/moselle_griddedWOFOST/staticmaps/crop_rotation_types.tif
     relevant_crop_rotations: [1, 2, 3]
   rooting_depth:
-    location: D:\NoBackup\moselle_griddedWOFOST\staticmaps\rooting_depth.tif
-crop_parameters: D:\NoBackup\moselle_griddedWOFOST\crop_parameters
+    location: c:/data/NoBackup/moselle_griddedWOFOST/staticmaps/rooting_depth.tif
+crop_parameters:
+    location: C:/data/NoBackup/moselle_griddedWOFOST/crop_parameters
+agromanagement_definitions:
+  location: C:\data\NoBackup\moselle_griddedWOFOST\agromanagement
 weather_variables:
-  location: D:\NoBackup\moselle\inmaps\moselle_era5-2000_2018.nc
+  location: C:/data/NoBackup/moselle/inmaps/moselle_era5-2000_2018.nc
   variables:
     TMAX: TMAX
     TMIN: TMIN
@@ -21,3 +27,6 @@ weather_variables:
     ES0: PET
     E0: PET
     IRRAD: IRRAD
+runtime:
+  start_date: 2010-01-01
+  end_date: 2012-12-31
