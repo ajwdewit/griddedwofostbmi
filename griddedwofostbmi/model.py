@@ -71,14 +71,18 @@ class GriddedWOFOSTBMI:
         # initialize object grid for storing WOFOST results
         self.WOFOSTgrid = np.ndarray(shape=aez_map.shape, dtype=np.object)
 
+        # WOFOST configuration
+        p = Path(__file__)
+        wofost_config = str(p.parent / "conf" / "Wofost71_PP.conf")
+
         nrows, ncols = aez_map.shape
         p_row = None
         for i, (row, col) in enumerate(product(range(nrows), range(ncols))):
             if row != p_row:
                 p_row = row
                 print(f"Initializing row: {row}")
-            if row == 15:
-                break
+            # if row == 15:
+            #     break
             crop_rotation_type = crop_rotation_map[row, col]
             aez = aez_map[row, col]
             if crop_rotation_type not in self.config.maps.crop_rotation_map.relevant_crop_rotations:
@@ -90,7 +94,7 @@ class GriddedWOFOSTBMI:
             params = ParameterProvider(sitedata=site_parameters, cropdata=crop_parameters, soildata=soil_parameters)
             wofsim = GridAwareEngine(row=row, col=col, parameterprovider=params,
                                      weatherdataprovider=self.WFLOWWeatherDataProvider,
-                                     agromanagement=agro, config="Wofost71_PP.conf")
+                                     agromanagement=agro, config=wofost_config)
             self._check_start_end_date(wofsim, row, col, aez, crop_rotation_type)
             self.WOFOSTgrid[row, col] = wofsim
         print(f"Initializing took {time.time() - t1} seconds")
@@ -161,4 +165,3 @@ class GriddedWOFOSTBMI:
             except (ValueError, TypeError) as e:
                 value = np.NaN
             dest_array[row, col] = value
-        print(1)
