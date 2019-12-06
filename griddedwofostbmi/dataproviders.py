@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2019 Wageningeni Environmental Research, Wageningen-UR
+# Allard de Wit (allard.dewit@wur.nl), December 2019
 import os, sys
 import collections
 from pathlib import Path
@@ -56,7 +59,6 @@ class WFLOWWeatherDataProvider(WeatherDataProvider):
             self.longitude = np.array(ds.lon)
 
     def _read_new_layer(self, day):
-        self.active_layers = {}
         with xarray.open_dataset(self.config.weather_variables.location) as ds:
             ds_oneday = ds.sel(time=day)
             ds_oneday.load()

@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2019 Wageningeni Environmental Research, Wageningen-UR
+# Allard de Wit (allard.dewit@wur.nl), December 2019
+
 from pathlib import Path
 from itertools import product
 import time
+import warnings
+warnings.filterwarnings("ignore")
 
 import numpy as np
 import yaml
@@ -39,6 +45,14 @@ def read_config_file(config_file):
 
 
 class GriddedWOFOSTBMI:
+    output_variables = {"LAI": ("Leaf area index", "m2.m-2"),
+                        "RD": ("Rooting depth", "cm"),
+                        "TAGP": ("Total above-ground production", "kg.ha"),
+                        "TWSO": ("Total weight storage organs", "kg.ha"),
+                        "DVS": ("Development stage", "1.0"),  # e.g. dimensionless
+                        }
+    input_variables = {"RFTRA":  ("Reduction factor for transpiration", "1.0"),
+                       }
 
     def __init__(self, *args, **kwargs):
         self.initialize(*args, **kwargs)
@@ -77,10 +91,12 @@ class GriddedWOFOSTBMI:
 
         nrows, ncols = aez_map.shape
         p_row = None
-        for i, (row, col) in enumerate(product(range(nrows), range(ncols))):
+        print("Initializing: .", end="")
+        for (row, col) in product(range(nrows), range(ncols)):
             if row != p_row:
                 p_row = row
-                print(f"Initializing row: {row}")
+                if row % 10 == 0:
+                    print(f"{row/float(nrows)*100:.1f}%..", end="")
             # if row == 15:
             #     break
             crop_rotation_type = crop_rotation_map[row, col]
@@ -97,7 +113,7 @@ class GriddedWOFOSTBMI:
                                      agromanagement=agro, config=wofost_config)
             self._check_start_end_date(wofsim, row, col, aez, crop_rotation_type)
             self.WOFOSTgrid[row, col] = wofsim
-        print(f"Initializing took {time.time() - t1} seconds")
+        print(f"\nInitializing took {time.time() - t1} seconds")
 
     def _check_start_end_date(self, wofsim, row, col, aez, crop_rotation_type):
         """Checks the start/end date of a given model instance with the global configuration
@@ -141,18 +157,26 @@ class GriddedWOFOSTBMI:
         return "days"
 
     def get_input_var_names(self):
-        return ["RFTRA"]
+        return self.input_variables.keys()
 
     def get_output_var_names(self):
-        return ["LAI", "RD"]
+        return self.output_variables.keys()
 
     def get_var_units(self, varname):
-        raise NotImplementedError()
+        if varname in self.input_variables:
+            return self.input_variables[varname][1]
+        if varname in self.output_variables:
+            return self.output_variables[varname][1]
+        raise RuntimeError(f"'{varname}' not defined as a BMI input/output variable!")
 
     def get_value(self, varname, dest_array):
+        if varname not in self.output_variables:
+            raise RuntimeError(f"'{varname}' not defined as a BMI output variable!")
+
         if dest_array.shape != self.WOFOSTgrid.shape:
             msg = "WOFOST simulation grid and output array not the same size!"
             raise RuntimeError(msg)
+
         nrows = self.config.maps.metadata.nrows
         ncols = self.config.maps.metadata.ncols
         for row, col in product(range(nrows), range(ncols)):
