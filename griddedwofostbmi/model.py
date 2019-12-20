@@ -21,6 +21,10 @@ from .dataproviders import WFLOWWeatherDataProvider, read_agromanagement
 from .engine import GridAwareEngine
 
 
+def mm_to_cm(x):
+    return x/10.
+
+
 def check_grid_size(conf, grid):
     gd = conf.maps.metadata
     if grid.shape != (gd.nrows, gd.ncols):
@@ -51,7 +55,8 @@ class GriddedWOFOSTBMI:
                         "TWSO": ("Total weight storage organs", "kg.ha"),
                         "DVS": ("Development stage", "1.0"),  # e.g. dimensionless
                         }
-    input_variables = {"RFTRA":  ("Reduction factor for transpiration", "1.0"),
+    input_variables = {"Transpiration":  ("Actual crop transpiration", "mm/day", "TRA", mm_to_cm),
+                       "PotTrans": ("Potential crop transpiration", "mm/day", "TRAMX", mm_to_cm),
                        }
 
     def __init__(self, *args, **kwargs):
@@ -97,8 +102,8 @@ class GriddedWOFOSTBMI:
                 p_row = row
                 if row % 10 == 0:
                     print(f"{row/float(nrows)*100:.1f}%..", end="")
-            # if row == 15:
-            #     break
+            if row == 15:
+                break
             crop_rotation_type = crop_rotation_map[row, col]
             aez = aez_map[row, col]
             if crop_rotation_type not in self.config.maps.crop_rotation_map.relevant_crop_rotations:
@@ -169,13 +174,12 @@ class GriddedWOFOSTBMI:
             return self.output_variables[varname][1]
         raise RuntimeError(f"'{varname}' not defined as a BMI input/output variable!")
 
-    def get_value(self, varname, dest_array):
+    def get_value(self, varname):
         if varname not in self.output_variables:
             raise RuntimeError(f"'{varname}' not defined as a BMI output variable!")
 
-        if dest_array.shape != self.WOFOSTgrid.shape:
-            msg = "WOFOST simulation grid and output array not the same size!"
-            raise RuntimeError(msg)
+        # Destination array for WOFOST output variable.
+        dest_array = np.full_like(self.WOFOSTgrid, dtype=np.float64, fill_value=np.NaN)
 
         nrows = self.config.maps.metadata.nrows
         ncols = self.config.maps.metadata.ncols
@@ -184,8 +188,36 @@ class GriddedWOFOSTBMI:
             if wofsim is None:
                 continue
             value = wofsim.get_variable(varname)
-            try:
-                value = float(value)
-            except (ValueError, TypeError) as e:
-                value = np.NaN
-            dest_array[row, col] = value
+            if value is None:
+                dest_array[row, col] = 0.0
+            else:
+                dest_array[row, col] = value
+
+        if self.config.model_output.flip_output_array:
+            return np.flipud(dest_array)
+        else:
+            return dest_array
+
+    def set_value(self, varname, value_array):
+
+        if varname not in self.input_variables:
+            msg = f"'{varname}' not defined as a BMI input variable!"
+            self.logger.error(msg)
+            raise RuntimeError(msg)
+
+        if value_array.shape != self.WOFOSTgrid.shape:
+            msg = f"Input array of shape {value_array.shape} does not match with WOFOST array ({self.WOFOSTgrid.shape})"
+            self.logger.error(msg)
+            raise RuntimeError(msg)
+
+        WOFOST_varname = self.input_variables[varname][2]
+        conversion = self.input_variables[varname][3]
+
+        nrows = self.config.maps.metadata.nrows
+        ncols = self.config.maps.metadata.ncols
+        for row, col in product(range(nrows), range(ncols)):
+            wofsim = self.WOFOSTgrid[row, col]
+            if wofsim is None:
+                continue
+            value = conversion(value_array[row, col])
+            wofsim.set_variable(WOFOST_varname, value)

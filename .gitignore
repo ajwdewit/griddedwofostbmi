@@ -129,3 +129,4 @@ runfiles/netcdf/*
 runfiles/*.dat
 runfiles/*.png
 runfiles/*.nc
+pcse/

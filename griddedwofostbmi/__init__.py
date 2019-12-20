@@ -4,3 +4,4 @@
 from . import dataproviders
 from . import model
 from . import engine
+from . import wofost
